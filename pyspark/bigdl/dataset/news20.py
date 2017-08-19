@@ -19,22 +19,20 @@ from bigdl.dataset import base
 import os
 import sys
 
-NEWS20_URL = 'http://qwone.com/~jason/20Newsgroups/20news-19997.tar.gz'  # noqa
+NEWS20_URL = 'http://qwone.com/~jason/20Newsgroups/20news-bydate.tar.gz'  # noqa
 GLOVE_URL = 'http://nlp.stanford.edu/data/glove.6B.zip'  # noqa
 
 CLASS_NUM = 20
 
 
 def download_news20(dest_dir):
-    file_name = "20news-19997.tar.gz"
+    file_name = "20news-bydate.tar.gz"
     file_abs_path = base.maybe_download(file_name, dest_dir, NEWS20_URL)
     tar = tarfile.open(file_abs_path, "r:gz")
-    extracted_to = os.path.join(dest_dir, "20_newsgroups")
-    if not os.path.exists(extracted_to):
-        print("Extracting %s to %s" % (file_abs_path, extracted_to))
+    if not os.path.exists(dest_dir):
+        print("Extracting %s" % (file_abs_path))
         tar.extractall(dest_dir)
         tar.close()
-    return extracted_to
 
 
 def download_glove_w2v(dest_dir):
@@ -50,16 +48,17 @@ def download_glove_w2v(dest_dir):
     return extracted_to
 
 
-def get_news20(source_dir="/tmp/news20/"):
+def get_news20_data(source_dir, sub_dir):
     """
     Parse or download news20 if source_dir is empty.
-
     :param source_dir: The directory storing news data.
+    :param sub_dir: The sub-directory storing train/test data.
     :return: A list of (tokens, label)
     """
-    news_dir = download_news20(source_dir)
+    download_news20(source_dir)
     texts = []  # list of text samples
     label_id = 0
+    news_dir = os.path.join(source_dir, sub_dir)
     for name in sorted(os.listdir(news_dir)):
         path = os.path.join(news_dir, name)
         label_id += 1
@@ -74,7 +73,18 @@ def get_news20(source_dir="/tmp/news20/"):
                     content = f.read()
                     texts.append((content, label_id))
                     f.close()
+    return texts
 
+
+def get_news20(source_dir='/tmp/news20data'):
+    """
+    Get combined train and test dataset.
+    :param source_dir: The extraction directory
+    :return: A list of (tokens, label)
+    """
+    train = get_news20_data(source_dir, "20news-bydate-train")
+    test = get_news20_data(source_dir, "20news-bydate-test")
+    texts = train + test
     print('Found %s texts.' % len(texts))
     return texts
 
